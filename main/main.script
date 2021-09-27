@@ -1,0 +1,102 @@
+
+local swtest = require("example.swampy-example")
+local json 	 = require("swampy.utils.json")
+
+local function logtext(self, str)
+
+	msg.post("/gui#log", "logtext", { text = str } )
+end 
+
+function init(self)
+
+	self.logging = ""
+	
+	swtest.setup(self, "MyGame")
+	swtest.login(self, function(data) 
+		logtext(self, "Login OK.. Connecting..")
+		swtest.connect(self, function(data) 
+			logtext(self, "Connection: "..tostring(data))
+			-- Do stuff here after connection
+		end)
+	end)
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	-- Add update code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function on_message(self, message_id, message, sender)
+
+	if(message_id == hash("api/find")) then 
+		swtest.findgame( self, "gameX", function(data) 
+			logtext(self, data["status"])
+		end) 
+	end
+	if(message_id == hash("api/create")) then 
+		swtest.creategame( self, "gameX", function(data) 
+			pprint(data)
+			if(data.status and data.status == "OK") then 
+				self.game = json.decode(data.result)
+			end
+			logtext(self, data["status"])
+		end) 
+	end
+	if(message_id == hash("api/join")) then 
+		swtest.joingame( self, "gameX", function(data) 
+			pprint(data)
+			if(data.status and data.status == "OK") then 
+				self.game = json.decode(data.result)
+			end
+			logtext(self, data["status"])
+		end) 
+	end
+	if(message_id == hash("api/setplayername")) then 
+		self.player_name = message.playername
+		swtest.updateaccount( self, function(data) 
+			pprint(data)
+			logtext(self, data["status"])
+		end) 
+	end
+
+	if(message_id == hash("api/gamepoll")) then 
+		swtest.pollgame( self )
+	end
+
+	if(message_id == hash("api/gameupdate")) then 
+		swtest.doupdate( self, function(data) 
+			pprint("[GAME UPDATE] ", data)
+			logtext(self, data["status"])
+		end) 
+	end
+
+	if(message_id == hash("api/waiting")) then 
+		swtest.waiting( self )
+	end
+	
+end
+
+function on_input(self, action_id, action)
+	-- Add input-handling code here. The game object this script is attached to
+	-- must have acquired input focus:
+	--
+	--    msg.post(".", "acquire_input_focus")
+	--
+	-- All mapped input bindings will be received. Mouse and touch input will
+	-- be received regardless of where on the screen it happened.
+	-- Learn more: https://defold.com/manuals/input/
+	-- Remove this function if not needed
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end

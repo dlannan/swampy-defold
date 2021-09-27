@@ -1,0 +1,83 @@
+
+
+local function logtext(self, str)
+
+	self.logging = self.logging..tostring(str).."\n"
+	local s = gui.get_node("gui-log")
+	gui.set_text(s, self.logging)
+
+	-- When adding logging always adjust to fit the bottom line of text 
+	local met = gui.get_text_metrics_from_node(s)
+	if(met.height > 250) then 
+		gui.set_position(s, vmath.vector3(-225, 125 + ((met.height - 250)), 0.0))
+	end 
+end 
+
+function init(self)
+	self.logging = ""
+	msg.post(".", "acquire_input_focus")
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	-- Add update code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("logtext") then
+		logtext(self, message.text)
+	end 
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("touch") and action.pressed then 
+		local button = gui.get_node("btn_find") 
+		if gui.pick_node(button, action.x, action.y) then -- <5>
+			logtext(self, "Finding gameX...")
+			msg.post("/main", "api/find", { gamename = "gameX" })
+		end
+		local button = gui.get_node("btn_create") 
+		if gui.pick_node(button, action.x, action.y) then -- <5>
+			logtext(self, "Creating gameX...")
+			msg.post("/main", "api/create", { gamename = "gameX" })
+		end
+		local button = gui.get_node("btn_join") 
+		if gui.pick_node(button, action.x, action.y) then -- <5>
+			logtext(self, "Joining gameX...")
+			msg.post("/main", "api/join", { gamename = "gameX" })
+		end
+		local button = gui.get_node("btn_setplayername") 
+		if gui.pick_node(button, action.x, action.y) then -- <5>
+			logtext(self, "Setting Playername to APlayer...")
+			msg.post("/main", "api/setplayername", { playername = "APlayer" })
+		end
+		local button = gui.get_node("btn_poll") 
+		if gui.pick_node(button, action.x, action.y) then -- <5>
+			logtext(self, "Polling gameX...")
+			msg.post("/main", "api/gamepoll", { gamename = "gameX" })
+		end
+		local button = gui.get_node("btn_update") 
+		if gui.pick_node(button, action.x, action.y) then -- <5>
+			logtext(self, "Updating gameX...")
+			msg.post("/main", "api/gameupdate", { gamename = "gameX" })
+		end
+		local button = gui.get_node("btn_waiting") 
+		if gui.pick_node(button, action.x, action.y) then -- <5>
+			logtext(self, "Waiting for gameX...")
+			msg.post("/main", "api/waiting", { gamename = "gameX" })
+		end
+	end
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end
