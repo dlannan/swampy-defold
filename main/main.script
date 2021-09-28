@@ -13,11 +13,7 @@ function init(self)
 	
 	swtest.setup(self, "MyGame")
 	swtest.login(self, function(data) 
-		logtext(self, "Login OK.. Connecting..")
-		swtest.connect(self, function(data) 
-			logtext(self, "Connection: "..tostring(data))
-			-- Do stuff here after connection
-		end)
+		logtext(self, "Login OK.")
 	end)
 end
 
@@ -35,6 +31,12 @@ end
 
 function on_message(self, message_id, message, sender)
 
+	if(message_id == hash("api/connect")) then 
+		swtest.connect(self, function(data) 
+			logtext(self, "Connection: "..tostring(data))
+		end)
+	end 
+		
 	if(message_id == hash("api/find")) then 
 		swtest.findgame( self, "gameX", function(data) 
 			logtext(self, data["status"])
@@ -53,7 +55,7 @@ function on_message(self, message_id, message, sender)
 		swtest.joingame( self, "gameX", function(data) 
 			pprint(data)
 			if(data.status and data.status == "OK") then 
-				self.game = json.decode(data.result)
+				if(data.result) then self.game = json.decode(data.result) end
 			end
 			logtext(self, data["status"])
 		end) 
@@ -80,7 +82,18 @@ function on_message(self, message_id, message, sender)
 	if(message_id == hash("api/waiting")) then 
 		swtest.waiting( self )
 	end
-	
+
+	if(message_id == hash("api/gameleave")) then 
+		swtest.leavegame( self, "gameX", function(data) 
+			logtext(self, data["status"])
+		end) 
+	end
+
+	if(message_id == hash("api/gameclose")) then 
+		swtest.closegame( self , "gameX", function(data) 
+			logtext(self, data["status"])
+		end) 
+	end
 end
 
 function on_input(self, action_id, action)

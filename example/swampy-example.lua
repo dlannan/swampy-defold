@@ -118,7 +118,7 @@ local function device_login(self, callback)
 			-- store the token and use it when communicating with the server
 			self.swp_token = data.bearertoken
 			swampy.set_bearer_token(self.swp_client, self.swp_token)
-			--pprint(self.swp_client)
+			pprint(self.swp_client)
 			
 			print("Successful login")
 			if(callback) then callback() end
@@ -171,7 +171,7 @@ local function connect(self, callback)
 				self.swp_account = rdata.data
 				-- Not sure this is needed anymore (nakama legacy)
 				self.client_id = self.swp_account.username 
-				self.user_id = self.swp_account.id
+				self.user_id = self.swp_account.uid
 
 				print("Connected ok.")
 				self.swp_client.state = "CONNECTED"
@@ -230,7 +230,6 @@ local function updategame(self, callback)
 	if(self.game == nil) then return end 
 	
 	local body = make_requestgamestate( self.swp_client, self.game_name, self.device_id)
-	body.state = self.game.state or GAME.GAME_JOINING
 	local bodystr = json.encode(body)
 	swampy.game_update( self.swp_client, self.game_name, self.device_id, function(data)
 

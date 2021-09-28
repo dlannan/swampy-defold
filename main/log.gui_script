@@ -38,6 +38,11 @@ end
 
 function on_input(self, action_id, action)
 	if action_id == hash("touch") and action.pressed then 
+		local button = gui.get_node("btn_connect") 
+		if gui.pick_node(button, action.x, action.y) then -- <5>
+			logtext(self, "Connecting to Server...")
+			msg.post("/main", "api/connect", { })
+		end
 		local button = gui.get_node("btn_find") 
 		if gui.pick_node(button, action.x, action.y) then -- <5>
 			logtext(self, "Finding gameX...")
@@ -72,6 +77,16 @@ function on_input(self, action_id, action)
 		if gui.pick_node(button, action.x, action.y) then -- <5>
 			logtext(self, "Waiting for gameX...")
 			msg.post("/main", "api/waiting", { gamename = "gameX" })
+		end
+		local button = gui.get_node("btn_leave") 
+		if gui.pick_node(button, action.x, action.y) then -- <5>
+			logtext(self, "Leaving gameX...")
+			msg.post("/main", "api/gameleave", { gamename = "gameX" })
+		end
+		local button = gui.get_node("btn_close") 
+		if gui.pick_node(button, action.x, action.y) then -- <5>
+			logtext(self, "Closing gameX...")
+			msg.post("/main", "api/gameclose", { gamename = "gameX" })
 		end
 	end
 end

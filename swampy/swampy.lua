@@ -274,7 +274,8 @@ local function game_func( client, ep, gamename, device_id, callback, body )
 		http.request(tostring(qgame), method, function(self, _, resp)
 
 			if(resp.response) then 
-				local respdata = json.decode(resp.response)
+				local respdata = nil 
+				if(resp.response) then respdata = json.decode(resp.response) end
 				callback(respdata)
 			end
 		end, header, body)
