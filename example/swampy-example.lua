@@ -5,6 +5,9 @@ local swampy 	= require "swampy.swampy"
 local url 		= require "swampy.utils.url"
 local json 		= require "swampy.utils.json"
 
+-- Some general settings. This is game specific.
+local MAX_CONNECT_ATTEMPTS		= 10
+
 -- ---------------------------------------------------------------------------
 -- Game level states.
 --   These track where you are in the login and running process
@@ -52,6 +55,24 @@ local function websocket_callback(self, conn, data)
 	elseif data.event == websocket.EVENT_MESSAGE then
 		log("Receiving: '" .. tostring(data.message) .. "'")
 	end
+end
+
+-- ---------------------------------------------------------------------------
+-- Check connection when calling swampy funcs
+
+local function check_connect(self)
+
+	local ok = nil
+	local resp = { status = "ERROR" } 
+	if(self.swp_account == nil) then  resp.status = "Connect Error: No valid swampy account."; return ok, resp end
+	
+	if(self.swp_client.state == nil) then resp.status = "Connect Error: failed to connect."; return ok, resp end
+	if(self.client_id == nil) then  resp.status = "Connect Error: No Client Id."; return ok, resp end
+	if(self.user_id == nil) then  resp.status = "Connect Error: No User Id."; return ok, resp end 
+	if(self.swp_account == nil) then  resp.status = "Connect Error: No valid swampy account."; return ok, resp end
+	ok = true 
+	-- Handle other connect issues here
+	return ok, resp
 end
 
 -- ---------------------------------------------------------------------------
@@ -135,7 +156,13 @@ local function connect(self, callback)
 
 	-- The connect process for the time beiing is to enable an account with user info 
 	--  attached to the device the user has and the user generated token they are connecting with.
-	-- Dont connect too many times
+	self.swp_conn_attempts = (self.swp_conn_attempts or 0) + 1
+	if(self.swp_conn_attempts > MAX_CONNECT_ATTEMPTS) then callback({ status = "Connect Error: Exceeded connect attempts." }); return end
+	
+	self.client_id 		= nil
+	self.user_id 		= nil
+	self.swp_account 	= nil
+	
 	if(self.swp_client.state ~= "CONNECTING") then 
 		self.swp_client.state = "CONNECTING"
 		swampy.connect( self.swp_client, self.player_name, self.device_id, function(rdata)
@@ -147,10 +174,11 @@ local function connect(self, callback)
 				self.user_id = self.swp_account.id
 
 				print("Connected ok.")
+				self.swp_client.state = "CONNECTED"
 			else 
 				print("Connect failed.")
+				self.swp_client.state = nil
 			end
-			self.swp_client.state = nil
 			callback(rdata.status)
 		end)
 	end
@@ -159,6 +187,9 @@ end
 -- ---------------------------------------------------------------------------
 local function updateaccount(self, callback)
 
+	local ok, resp = check_connect(self) 
+	if(ok == nil) then callback(resp); return nil end 
+	
 	-- Only bother with display name initially
 	local useracct = self.swp_account
 	useracct.username = self.player_name
@@ -194,6 +225,8 @@ end
 -- A normal updategame does a "request_round" event with no other data sent
 local function updategame(self, callback) 
 
+	local ok, resp = check_connect(self) 
+	if(ok == nil) then callback(resp); return nil end 
 	if(self.game == nil) then return end 
 	
 	local body = make_requestgamestate( self.swp_client, self.game_name, self.device_id)
@@ -214,6 +247,9 @@ end
 -- An update that doesnt return anything, just keeps connect alive
 local function pollgame(self) 
 
+	local ok, resp = check_connect(self) 
+	if(ok == nil) then print(resp.status); return nil end 
+	
 	local body = make_requestgamestate( self.swp_client, self.game_name, self.device_id )
 	body.event = USER_EVENT.POLL
 	local bodystr = json.encode(body)
@@ -225,6 +261,9 @@ end
 -- ---------------------------------------------------------------------------
 
 local function updateready(self, ready) 
+
+	local ok, resp = check_connect(self) 
+	if(ok == nil) then print(resp.status); return nil end 
 	
 	if(self.game.state ~= GAME.GAME_JOINING) then return end
 
@@ -242,6 +281,8 @@ end
 
 local function startgame(self, callback)
 
+	local ok, resp = check_connect(self) 
+	if(ok == nil) then callback(resp); return nil end 
 	if(self.game.state ~= GAME.GAME_JOINING) then return end
 	
 	-- This sets the server game state to match the owner	
@@ -264,6 +305,8 @@ end
 
 local function exitgame(self, callback)
 
+	local ok, resp = check_connect(self) 
+	if(ok == nil) then callback(resp); return nil end 
 	local body = make_requestgamestate( self.swp_client, self.game_name, self.device_id )
 	body.state = GAME.EXIT
 	local bodystr = json.encode(body)
@@ -276,6 +319,8 @@ end
 
 local function updategamestate(self, callback)
 
+	local ok, resp = check_connect(self) 
+	if(ok == nil) then callback(resp); return nil end 
 	if(self.game.state < GAME.GAME_JOINING) then return end
 
 	local body = make_requestgamestate( self.swp_client, self.game_name, self.device_id )
@@ -297,6 +342,8 @@ end
 
 local function waiting(self)
 
+	local ok, resp = check_connect(self) 
+	if(ok == nil) then print(resp.status); return nil end 
 	if(self.game == nil) then pprint("Invalid Game: ", self.game); return end 
 	
 	local body = make_requestgamestate( self.swp_client, self.game_name, self.device_id )
@@ -316,7 +363,9 @@ end
 -- ---------------------------------------------------------------------------
 
 local function doupdate(self, callback)
-	
+
+	local ok, resp = check_connect(self) 
+	if(ok == nil) then callback(resp); return nil end 
 	updategame(self, function(data) 
 
 		-- Replace incoming data for the game object 
@@ -345,6 +394,9 @@ end
 -- Just a wrapper in case want to insert extra functionality
 local function findgame( self, gamename, callback )
 
+	local ok, resp = check_connect(self) 
+	if(ok == nil) then callback(resp); return nil end 
+	
 	swampy.game_find( self.swp_client, gamename, self.device_id, callback, nil )
 end
 
@@ -352,6 +404,9 @@ end
 -- Just a wrapper in case want to insert extra functionality
 local function creategame( self, gamename, callback )
 
+	local ok, resp = check_connect(self) 
+	if(ok == nil) then callback(resp); return nil end 
+	
 	local limit = 10 -- 10 players - this is not being used in MyGame.
 	swampy.game_create( self.swp_client, gamename, self.device_id, limit, callback )
 end
@@ -360,6 +415,9 @@ end
 
 local function joingame( self, gamename, callback )
 
+	local ok, resp = check_connect(self) 
+	if(ok == nil) then callback(resp); return nil end 
+	
 	swampy.game_join( self.swp_client, gamename, self.device_id, callback, nil )
 end
 
@@ -367,6 +425,9 @@ end
 
 local function leavegame( self, gamename, callback )
 
+	local ok, resp = check_connect(self) 
+	if(ok == nil) then callback(resp); return nil end 
+	
 	swampy.game_leave( self.swp_client, gamename, self.device_id, callback, nil )
 end
 
@@ -374,6 +435,9 @@ end
 
 local function closegame( self, gamename, callback )
 
+	local ok, resp = check_connect(self) 
+	if(ok == nil) then callback(resp); return nil end 
+	
 	swampy.game_close( self.swp_client, gamename, self.device_id, callback, nil )
 end
 
