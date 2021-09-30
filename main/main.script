@@ -15,18 +15,22 @@ function init(self)
 	swtest.login(self, function(data) 
 		logtext(self, "Login OK.")
 	end)
+
+	-- Start polling if we get connected and join/create a game 
+	self.poller = timer.delay(5, true, function()
+
+		if(self.game) then 
+			logtext(self, "Polling gameX...")
+			swtest.pollgame( self )
+			msg.post("/gui#log", "pollcolor")
+		end
+	end)
 end
 
 function final(self)
-	-- Add finalization code here
-	-- Learn more: https://defold.com/manuals/script/
-	-- Remove this function if not needed
 end
 
 function update(self, dt)
-	-- Add update code here
-	-- Learn more: https://defold.com/manuals/script/
-	-- Remove this function if not needed
 end
 
 function on_message(self, message_id, message, sender)
@@ -86,12 +90,14 @@ function on_message(self, message_id, message, sender)
 	if(message_id == hash("api/gameleave")) then 
 		swtest.leavegame( self, "gameX", function(data) 
 			logtext(self, data["status"])
+			self.game = nil
 		end) 
 	end
 
 	if(message_id == hash("api/gameclose")) then 
 		swtest.closegame( self , "gameX", function(data) 
 			logtext(self, data["status"])
+			self.game = nil
 		end) 
 	end
 end

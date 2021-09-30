@@ -320,7 +320,7 @@ local function updategamestate(self, callback)
 
 	local ok, resp = check_connect(self) 
 	if(ok == nil) then callback(resp); return nil end 
-	if(self.game.state < GAME.GAME_JOINING) then return end
+	if(self.game.state == nil or self.game.state < GAME.GAME_JOINING) then return end
 
 	local body = make_requestgamestate( self.swp_client, self.game_name, self.device_id )
 	body.state = self.game.state
@@ -363,8 +363,6 @@ end
 
 local function doupdate(self, callback)
 
-	local ok, resp = check_connect(self) 
-	if(ok == nil) then callback(resp); return nil end 
 	updategame(self, function(data) 
 
 		-- Replace incoming data for the game object 
@@ -407,7 +405,10 @@ local function creategame( self, gamename, callback )
 	if(ok == nil) then callback(resp); return nil end 
 	
 	local limit = 10 -- 10 players - this is not being used in MyGame.
-	swampy.game_create( self.swp_client, gamename, self.device_id, limit, callback )
+	swampy.game_create( self.swp_client, gamename, self.device_id, limit, function(data)
+		self.game_name = gamename 
+		callback(data)
+	end )
 end
 
 -- ---------------------------------------------------------------------------
@@ -417,7 +418,10 @@ local function joingame( self, gamename, callback )
 	local ok, resp = check_connect(self) 
 	if(ok == nil) then callback(resp); return nil end 
 	
-	swampy.game_join( self.swp_client, gamename, self.device_id, callback, nil )
+	swampy.game_join( self.swp_client, gamename, self.device_id, function(data)
+		self.game_name = gamename 
+		callback(data)
+	end, nil )
 end
 
 -- ---------------------------------------------------------------------------

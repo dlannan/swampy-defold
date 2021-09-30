@@ -1,4 +1,8 @@
 
+local function on_animation_done(self, node)
+	-- fade out node, but wait 2 seconds before the animation starts
+	gui.animate(node, gui.PROP_COLOR, vmath.vector4(0.3, 0.4, 0.8, 1), gui.EASING_OUTQUAD, 0.5, 0.5)
+end
 
 local function logtext(self, str)
 
@@ -16,6 +20,10 @@ end
 function init(self)
 	self.logging = ""
 	msg.post(".", "acquire_input_focus")
+
+	-- fetch the node we want to animate
+	local poll_node = gui.get_node("btn_poll")
+	gui.set_color(poll_node, vmath.vector4(0.3, 0.4, 0.8, 1))
 end
 
 function final(self)
@@ -33,6 +41,10 @@ end
 function on_message(self, message_id, message, sender)
 	if message_id == hash("logtext") then
 		logtext(self, message.text)
+	end 
+	if message_id == hash("pollcolor") then 
+		local poll_node = gui.get_node("btn_poll")
+		gui.animate(poll_node, gui.PROP_COLOR, vmath.vector4(0.5, 0.7, 1.0, 1), gui.EASING_INOUTQUAD, 0.5, 0.0, on_animation_done)
 	end 
 end
 
