@@ -148,6 +148,9 @@ local function do_login( client, userid, device_id, callback )
 			qauth.query.uid = device_id 
 		
 			http.request(tostring(qauth), client.method, callback)
+		else 
+			-- If this occurs, then the request failed for some reason.
+			callback(nil, nil, { response = json.encode( { status = 'ERR' } ) } )
 		end
 	end)
 end
