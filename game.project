@@ -17,3 +17,7 @@ title = swampy-defold-test
 [engine]
 run_while_iconified = 1
 
+[library]
+include_dirs = swampy
+
+
