@@ -160,10 +160,10 @@ local function do_login( client, userid, device_id, callback )
 			local qauth = url.parse(client.uri..client.base_path..end_points.user.authenticate)
 
 			local header = makeHeader(client)
-			header["LoginToken"] = userid 
+			header["LoginToken"] = resp.uuid
 			header["DeviceId"] = device_id
-				
-			http.request(tostring(qauth), client.method, callback, header)
+		
+			http.request(tostring(qauth), client.method, callback)
 		else 
 			-- If this occurs, then the request failed for some reason.
 			callback(nil, nil, { response = json.encode( { status = 'ERR' } ) } )
