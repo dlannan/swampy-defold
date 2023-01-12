@@ -163,7 +163,7 @@ local function do_login( client, userid, device_id, callback )
 			header["LoginToken"] = resp.uuid
 			header["DeviceId"] = device_id
 		
-			http.request(tostring(qauth), client.method, callback)
+			http.request(tostring(qauth), client.method, callback, header)
 		else 
 			-- If this occurs, then the request failed for some reason.
 			callback(nil, nil, { response = json.encode( { status = 'ERR' } ) } )
