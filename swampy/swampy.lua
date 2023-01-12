@@ -148,7 +148,7 @@ local function do_login( client, userid, device_id, callback )
 	client.uid = userid 
 	client.device_id = device_id 
 
-	local header = makeHeader(client, true)
+	local header = makeHeader(client)
 	header["UserId"] = userid 
 	header["DeviceId"] = device_id
 	
@@ -158,10 +158,12 @@ local function do_login( client, userid, device_id, callback )
 		if(response.response and string.len(response.response) > 0) then 
 			local resp = json.decode(response.response)
 			local qauth = url.parse(client.uri..client.base_path..end_points.user.authenticate)
-			qauth.query.logintoken = resp.uuid
-			qauth.query.uid = device_id 
-		
-			http.request(tostring(qauth), client.method, callback)
+
+			local header = makeHeader(client)
+			header["LoginToken"] = userid 
+			header["DeviceId"] = device_id
+				
+			http.request(tostring(qauth), client.method, callback, header)
 		else 
 			-- If this occurs, then the request failed for some reason.
 			callback(nil, nil, { response = json.encode( { status = 'ERR' } ) } )
