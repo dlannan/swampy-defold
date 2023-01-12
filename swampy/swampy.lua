@@ -111,7 +111,7 @@ local function create_client(cfg)
 	client.scheme = "http://"
 	if(cfg.use_ssl) then client.scheme = "https://" end
 	client.uri = client.scheme..client.host..":"..client.port
-	client.base_path = "/api/v1/"
+	client.base_path = "/api/v1"
 	client.api_token = cfg.api_token
 	client.handler = http_result
 	return client 
