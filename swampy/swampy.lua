@@ -141,14 +141,16 @@ local function do_login( client, userid, device_id, callback )
 	end
 
 	local qlogin = url.parse(client.uri..client.base_path..end_points.user.login)
-	qlogin.query.userid = userid
-	qlogin.query.uid = device_id
+	-- qlogin.query.userid = userid
+	-- qlogin.query.uid = device_id
 
 	-- store in client for caching 
 	client.uid = userid 
 	client.device_id = device_id 
 
-	local header = makeHeader(client)
+	local header = makeHeader(client, true)
+	header["UserId"] = userid 
+	header["DeviceId"] = device_id
 	
 	-- We do a quick handshake to create a bearer token.
 	http.request(tostring(qlogin), client.method, function(self, _, response)
@@ -172,11 +174,11 @@ end
 local function connect(client, name, device_id, callback) 
 
 	local qtable = url.parse(client.uri..client.base_path..end_points.user.connect)
-	qtable.query.module = swampy.GAME_MODULENAME
-	qtable.query.name = name or genname()
-	qtable.query.uid = device_id
 
 	local header = makeHeader(client)
+	header["Module"] = swampy.GAME_MODULENAME
+	header["Name"] = name or genname()
+	header["DeviceId"] = device_id
 
 	http.request(tostring(qtable), client.method, function(self, _, resp)
 		
@@ -192,10 +194,9 @@ end
 local function get_table( client, name, limit, callback )
 
 	local qtable = url.parse(client.uri..client.base_path..end_points.data.gettable)
-	qtable.query.name = name
-	qtable.query.limit = limit
-
 	local header = makeHeader(client)
+	header["Name"] = name
+	header["Limit"] = limit
 
 	http.request(tostring(qtable), client.method, function(self, _, resp)
 
@@ -210,12 +211,12 @@ end
 local function set_table( client, name, data, callback )
 
 	local qtable = url.parse(client.uri..client.base_path..end_points.data.settable)
-	qtable.query.name = name
 
 	if(type(data) ~= "string") then return nil end
 	body = data		-- must be string
 	
 	local header = makeHeader(client)
+	header["Name"] = name
 
 	http.request(tostring(qtable), "POST", function(self, _, resp)
 
@@ -237,11 +238,10 @@ end
 local function update_user( client, device_id, playername, lang_tag, callback )
 
 	local quser = url.parse(client.uri..client.base_path..end_points.user.update)
-	quser.query.playername = playername 
-	quser.query.lang = lang_tag
-	quser.query.uid = device_id
-
 	local header = makeHeader(client)
+	header["PlayerName"] = playername 
+	header["Language"] = lang_tag
+	header["DeviceId"] = device_id
 	
 	http.request(tostring(quser), client.method, function(self, _, resp)
 
@@ -257,11 +257,10 @@ end
 local function game_create( client, gamename, device_id, limit, callback )
 
 	local qgame = url.parse(client.uri..client.base_path..end_points.game.create)
-	qgame.query.name = gamename
-	qgame.query.uid = device_id
-	qgame.query.limit = limit
-
 	local header = makeHeader(client)
+	header["Name"] = gamename
+	header["DeviceId"] = device_id
+	header["Limit"] = limit	
 
 	http.request(tostring(qgame), client.method, function(self, _, resp)
 
@@ -277,11 +276,12 @@ end
 local function game_func( client, ep, gamename, device_id, callback, body )
 
 	local qgame = url.parse(client.uri..client.base_path..ep)
-	qgame.query.name = gamename 
-	qgame.query.uid = device_id
-	-- qgame.query.tick = os.time()
 
 	local header = makeHeader(client)
+	header["Name"] = gamename 
+	header["DeviceId"] = device_id
+	-- qgame.query.tick = os.time()
+
 	local method = client.method 
 	if(body) then method = "POST" end
 
