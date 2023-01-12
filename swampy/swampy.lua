@@ -117,6 +117,15 @@ local function create_client(cfg)
 	return client 
 end 
 
+-- ---------------------------------------------------------------------------
+
+local function makeHeader(client) 
+	local header = { 
+		["Authorization"] = client.bearertoken or "",
+		["APIToken"] = client.api_token,
+	}
+	return header
+end 	
 
 -- ---------------------------------------------------------------------------
 
@@ -138,6 +147,8 @@ local function do_login( client, userid, device_id, callback )
 	-- store in client for caching 
 	client.uid = userid 
 	client.device_id = device_id 
+
+	local header = makeHeader(client)
 	
 	-- We do a quick handshake to create a bearer token.
 	http.request(tostring(qlogin), client.method, function(self, _, response)
@@ -153,7 +164,7 @@ local function do_login( client, userid, device_id, callback )
 			-- If this occurs, then the request failed for some reason.
 			callback(nil, nil, { response = json.encode( { status = 'ERR' } ) } )
 		end
-	end)
+	end, header)
 end
 
 -- ---------------------------------------------------------------------------
@@ -165,10 +176,7 @@ local function connect(client, name, device_id, callback)
 	qtable.query.name = name or genname()
 	qtable.query.uid = device_id
 
-	local header = { 
-		["Authorization"] = client.bearertoken or "",
-		["APIToken"] = client.api_token,
-	}
+	local header = makeHeader(client)
 
 	http.request(tostring(qtable), client.method, function(self, _, resp)
 		
@@ -187,12 +195,14 @@ local function get_table( client, name, limit, callback )
 	qtable.query.name = name
 	qtable.query.limit = limit
 
+	local header = makeHeader(client)
+
 	http.request(tostring(qtable), client.method, function(self, _, resp)
 
 		if(resp.response) then 
 			callback(resp)
 		end
-	end)
+	end, header)
 end
 
 -- ---------------------------------------------------------------------------
@@ -201,16 +211,18 @@ local function set_table( client, name, data, callback )
 
 	local qtable = url.parse(client.uri..client.base_path..end_points.data.settable)
 	qtable.query.name = name
-	headers = {}
+
 	if(type(data) ~= "string") then return nil end
 	body = data		-- must be string
 	
+	local header = makeHeader(client)
+
 	http.request(tostring(qtable), "POST", function(self, _, resp)
 
 		if(resp.response) then 
 			callback(resp)
 		end
-	end, headers, body)
+	end, header, body)
 end
 
 -- ---------------------------------------------------------------------------
@@ -229,7 +241,7 @@ local function update_user( client, device_id, playername, lang_tag, callback )
 	quser.query.lang = lang_tag
 	quser.query.uid = device_id
 
-	local header = { ["Authorization"] = client.bearertoken or "" }
+	local header = makeHeader(client)
 	
 	http.request(tostring(quser), client.method, function(self, _, resp)
 
@@ -249,7 +261,7 @@ local function game_create( client, gamename, device_id, limit, callback )
 	qgame.query.uid = device_id
 	qgame.query.limit = limit
 
-	local header = { ["Authorization"] = client.bearertoken or "" }
+	local header = makeHeader(client)
 
 	http.request(tostring(qgame), client.method, function(self, _, resp)
 
@@ -269,7 +281,7 @@ local function game_func( client, ep, gamename, device_id, callback, body )
 	qgame.query.uid = device_id
 	-- qgame.query.tick = os.time()
 
-	local header = { ["Authorization"] = client.bearertoken or "" }
+	local header = makeHeader(client)
 	local method = client.method 
 	if(body) then method = "POST" end
 
